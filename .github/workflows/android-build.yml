@@ -13,9 +13,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      HAS_RELEASE_KEYSTORE: ${{ secrets.ALMUS_RELEASE_KEYSTORE_BASE64 != '' }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,35 +23,21 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Grant execute permission for Gradle
-        run: |
-          chmod +x gradlew
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
 
       - name: Build Debug APK
         run: |
-          ./gradlew assembleDebug
+          gradle assembleDebug --stacktrace
 
       - name: Run Unit Tests
         run: |
-          ./gradlew test
-
-      - name: Build Release APK
-        if: env.HAS_RELEASE_KEYSTORE == 'true'
-        run: |
-          echo "Release keystore detected."
-          ./gradlew assembleRelease
+          gradle test --stacktrace
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: almus-studio-debug-apk
-          path: |
-            app/build/outputs/apk/debug/*.apk
-
-      - name: Upload Release APK
-        if: env.HAS_RELEASE_KEYSTORE == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: almus-studio-release-apk
-          path: |
-            app/build/outputs/apk/release/*.apk
+          path: app/build/outputs/apk/debug/*.apk
